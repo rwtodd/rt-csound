@@ -5,7 +5,6 @@
 ;; c:/Program Files/Csound6_x64/include/csound/csound.h
 ;; -----------------------------------------------------------
 
-
 (ffi:define-foreign-library csound (t (:default "csound64")))
 (pushnew #P"/Program Files/Csound6_x64/bin/"
 	 ffi:*foreign-library-directories* :test #'equal)
@@ -22,7 +21,6 @@
   (setq *csound-instance* (ffi:foreign-funcall "csoundCreate"
 					       :pointer (ffi:null-pointer)
 					       :pointer)))
-
 
 (defun destroy ()
   "close down the csound instance"
@@ -44,6 +42,21 @@
   "Call start after compiling ORC file"
   (= +success+ (ffi:foreign-funcall "csoundStart" :pointer *csound-instance* :int)))
 
+(defun compile-orc (orc)
+  "Compile the given orchestra code string."
+  (= +success+
+     (ffi:foreign-funcall "csoundCompileOrc"
+			  :pointer *csound-instance*
+			  :string orc :int)))
+
+(defun compile-sco (sco)
+  "Process score events given in the string SCO.
+It can be called repeatedly, which adds events to the event list."
+  (= +success+
+     (ffi:foreign-funcall "csoundReadScore"
+			  :pointer *csound-instance*
+			  :string sco :int)))
+
 (defun compile-csd (csd)
   "If CSD is a pathname, compile the .csd file. If CSD is a string,
 compile it as a CSD file."
@@ -59,6 +72,10 @@ compile it as a CSD file."
 continue, negative: error.  For all cases, you must call (reset)
 when done."
   (ffi:foreign-funcall "csoundPerform" :pointer *csound-instance* :int))
+
+(defun stop ()
+  "Stop any on-going performace which might be going on in another thread."
+  (ffi:foreign-funcall "csoundStop" :pointer *csound-instance* :void))
 
 (defun reset ()
   "Prepare for another performance without reloading csound"
